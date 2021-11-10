@@ -1,53 +1,51 @@
-require('dotenv').config()
+require('dotenv').config();
 const express = require('express');
-const multer  = require('multer')
-const upload = multer({ dest: 'tmp/' })
+const multer = require('multer');
+const upload = multer({ dest: 'tmp/' });
 const bodyParser = require('body-parser');
-const cors = require('cors');
-const fs = require('fs')
-const app = express()
-app.use(cors({
-    origin: "*",
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    preflightContinue: false
-  }))
+// const cors = require('cors');
+const fs = require('fs');
+const app = express();
 
+app.use(function (req, res, next) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+});
 
-app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('sounds/'));
 app.use(bodyParser.json());
 
-app.get('/list-sounds', async (req, res)=>{
-   res.json(fs.readdirSync('./sounds'))
-})
+app.get('/list-sounds', async (req, res) => {
+  res.json(fs.readdirSync('./sounds'));
+});
 
-app.get('/sounds/:file', async (req, res)=>{
-    res.sendFile(__dirname +`/sounds/${req.params.file}`)
-})
+app.get('/sounds/:file', async (req, res) => {
+  res.sendFile(__dirname + `/sounds/${req.params.file}`);
+});
 
-app.post('/upload', upload.single('sound'), async (req, res)=>{
-    // this route is protected with a special key -- sorry people
-    if (req.body.pass != process.env.UPLOADKEY) {
-        res.status(401).json('sorry pal..')
-        return
+app.post('/upload', upload.single('sound'), async (req, res) => {
+  // this route is protected with a special key -- sorry people
+  if (req.body.pass != process.env.UPLOADKEY) {
+    res.status(401).json('sorry pal..');
+    return;
+  }
+
+  if (req.file && req.file.mimetype == 'audio/mpeg') {
+    let existing = fs.readdirSync('./sounds');
+    if (existing.includes(req.file.originalname)) {
+      fs.unlink(`./tmp/${req.file.filename}`);
+      res.status(409).json('file exist');
+      return;
     }
 
-    if (req.file && req.file.mimetype == 'audio/mpeg') {
+    fs.renameSync(`./tmp/${req.file.filename}`, `./sounds/${req.file.originalname}`);
+  }
 
-        let existing = fs.readdirSync('./sounds')
-        if (existing.includes(req.file.originalname)) {
-            fs.unlink(`./tmp/${req.file.filename}`)
-            res.status(409).json('file exist')
-            return
-        }
+  res.json('thanks');
+});
 
-        fs.renameSync(`./tmp/${req.file.filename}`, `./sounds/${req.file.originalname}`)
-    }
-
-    res.json('thanks')
-})
-
-
-const server = app.listen(8085, function(){
-    console.log("Server started at 8085");
+const server = app.listen(8085, function () {
+  console.log('Server started at 8085');
 });
