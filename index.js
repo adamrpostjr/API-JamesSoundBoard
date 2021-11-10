@@ -9,6 +9,7 @@ const app = express()
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(express.static('sounds/'));
 app.use(bodyParser.json());
+app.use(cors())
 
 app.get('/list-sounds', async (req, res)=>{
    res.json(fs.readdirSync('./sounds'))
