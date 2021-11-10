@@ -3,6 +3,7 @@ const express = require('express');
 const multer  = require('multer')
 const upload = multer({ dest: 'tmp/' })
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const fs = require('fs')
 const app = express()
 
